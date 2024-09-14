@@ -1,4 +1,4 @@
-class ShoppingList(object):
+class ShoppingList:
     def __init__(self, list_name):
         self.list_name = list_name
         self.shopping_list = []
@@ -10,12 +10,15 @@ class ShoppingList(object):
             print("item already on list")
 
     def remove_item(self, item):
-        if not item in self.shopping_list:
+        try:
             self.shopping_list.remove(item)
+        except:
+            print("Item not found.")
 
     def view_list(self):
         print(self.list_name + ":")
         print("------------")
-        for i in self.shopping_list:
-            print(i)
+        for item in self.shopping_list:
+            print('-' + str(item))
         
+
