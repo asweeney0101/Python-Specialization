@@ -42,9 +42,9 @@ def create_recipe(conn, cursor):
 
     query = """
     INSERT INTO recipes (name, cooking_time, ingredients, difficulty)
-    VALUES (?, ?, ?, ?)
+    VALUES (%s, %s, %s, %s)
     """
-    
+
     cursor.execute(query, (name, cooking_time, returned_string, difficulty))
     conn.commit()
 
@@ -52,7 +52,38 @@ def create_recipe(conn, cursor):
 
 
 def search_recipe(conn, cursor):
-    return 1
+    cursor.execute("SELECT ingredients FROM Recipes")
+    results = cursor.fetchall()
+    all_ingredients = []
+    for result in results:
+       ingredients = result[0].split(', ') 
+       all_ingredients.extend(ingredients) 
+
+    unique_ingredients = list(set(all_ingredients))
+
+    print("\nAvailable ingredients:")
+    for idx, ingredient in enumerate(sorted(unique_ingredients), start=1):
+        print(f"{idx}. {ingredient}")
+
+    choice = int(input("Choose an ingredient by number to search: ")) - 1
+    searched_ingredient = sorted(unique_ingredients)[choice]
+    
+    query = "SELECT * FROM Recipes WHERE ingredients LIKE %s"
+    cursor.execute(query, ('%' + searched_ingredient + '%',))
+    matching_recipes = cursor.fetchall()
+
+    if matching_recipes:
+        print(f"\nRecipes containing '{searched_ingredient}':")
+        for recipe in matching_recipes:
+            # Each recipe is a tuple with (name, cooking_time, ingredients, difficulty)
+            name, cooking_time, ingredients, difficulty = recipe
+            print(f"\n- Name: {name}")
+            print(f"  Cooking Time: {cooking_time} mins")
+            print(f"  Ingredients: {ingredients}")
+            print(f"  Difficulty: {difficulty}")
+    else:
+        print(f"\nNo recipes found with the ingredient '{searched_ingredient}'")
+
 
 def update_recipe(conn, cursor):
     return 1
