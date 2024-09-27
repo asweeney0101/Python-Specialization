@@ -18,13 +18,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS Recipes (
                difficulty       VARCHAR(20)    
 );''')
 
-
-def create_recipe(conn, cursor):
-    name = str(input("What would you like to call this recipe? "))
-    cooking_time = int(input("Total Cook + Prep time: "))
-    ingredients = list(input("Please list the required ingredients, separated by commas: ").split(", "))
-    
-    def calculate_difficulty(cooking_time, ingredients):
+def calculate_difficulty(cooking_time, ingredients):
         numberOfIngredients = len(ingredients)
         if cooking_time < 10:
             if numberOfIngredients < 4:
@@ -35,8 +29,13 @@ def create_recipe(conn, cursor):
             if numberOfIngredients < 4:
                 return "Intermediate"
             else:
-                return "Hard" 
+                return "Hard"
 
+def create_recipe(conn, cursor):
+    name = str(input("What would you like to call this recipe? "))
+    cooking_time = int(input("Total Cook + Prep time: "))
+    ingredients = list(input("Please list the required ingredients, separated by commas: ").split(", "))
+    
     difficulty = calculate_difficulty(cooking_time, ingredients)        
     returned_string = ', '.join(ingredient.strip() for ingredient in ingredients)
 
@@ -86,7 +85,63 @@ def search_recipe(conn, cursor):
 
 
 def update_recipe(conn, cursor):
-    return 1
+    cursor.execute("SELECT id, name FROM Recipes")
+    results = cursor.fetchall()
+
+    if results:
+        print("\nAvailable recipes:")
+        for recipe in results:
+            print(f"{recipe[0]}. {recipe[1]}")
+        
+        recipe_id = int(input("\nEnter the ID of the recipe you want to update: "))
+
+        cursor.execute("SELECT * FROM Recipes WHERE id = %s", (recipe_id,))
+        recipe = cursor.fetchone()
+        
+        if recipe:
+            print("\nColumns you can update:")
+            print("1. Name")
+            print("2. Cooking Time")
+            print("3. Ingredients")
+            
+            column_choice = input("Enter the number corresponding to the column you want to update (1-3): ")
+
+            if column_choice == '1':
+                new_name = input("Enter the new recipe name: ")
+                query = "UPDATE Recipes SET name = %s WHERE id = %s"
+                cursor.execute(query, (new_name, recipe_id))
+                print(f"Recipe name updated to '{new_name}'!")
+            
+            elif column_choice == '2':
+                new_cooking_time = int(input("Enter the new cooking time (in minutes): "))
+                ingredients = recipe[2].split(", ") #Fetch the existing ingredients
+                difficulty = calculate_difficulty(new_cooking_time, ingredients)
+
+                query = "UPDATE Recipes SET cooking_time = %s, difficulty = %s WHERE id = %s"
+                cursor.execute(query, (new_cooking_time, difficulty, recipe_id))
+                print(f"Cooking time updated to {new_cooking_time} minutes and difficulty recalculated to '{difficulty}'!")
+            
+            elif column_choice == '3':
+                new_ingredients = list(input("Enter the new ingredients, separated by commas: ").split(", "))
+                new_ingredients_string = ', '.join(ingredient.strip() for ingredient in new_ingredients)
+                cooking_time = recipe[1]  # Fetch the existing cooking time
+                difficulty = calculate_difficulty(cooking_time, new_ingredients)
+
+                query = "UPDATE Recipes SET ingredients = %s, difficulty = %s WHERE id = %s"
+                cursor.execute(query, (new_ingredients_string, difficulty, recipe_id))
+                print(f"Ingredients updated to '{new_ingredients_string}' and difficulty recalculated to '{difficulty}'!")
+            
+            else:
+                print("Invalid choice! No update made.")
+            
+            conn.commit()
+
+        else:
+            print(f"No recipe found with ID {recipe_id}.")
+    else:
+        print("No recipes available to update.")
+
+
 
 def delete_recipe(conn, cursor):
     return 1
@@ -119,6 +174,4 @@ def main_menu(conn, cursor):
             break
         else:
             print("Invalid choice, please try again.")
-
-
 
