@@ -57,6 +57,8 @@ Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
+
 def create_recipe():
     while True:
         name = input("Enter the recipe name (Max length 50 characters): ")
@@ -88,6 +90,8 @@ def create_recipe():
         session.rollback()
         print(f"An error occurred: {e}")
 
+
+
 def view_all_recipes():
     recipes_list = session.query(Recipe).all()
 
@@ -97,6 +101,8 @@ def view_all_recipes():
 
     for recipe in recipes_list:
         print(recipe)
+
+
 
 def search_by_ingredients():
     if session.query(Recipe).count() == 0:
@@ -143,3 +149,61 @@ def search_by_ingredients():
             print(recipe)
     else:
         print(f"No recipes found with ingredients: {', '.join(search_ingredients)}")
+
+
+
+def edit_recipe():
+    if session.query(Recipe).count() == 0:
+        print("No recipes found.")
+        return
+    
+    results = session.query(Recipe.id, Recipe.name).all()
+
+    print("\nAvailable Recipes:\n")
+    for recipe in results:
+        print(f"ID: {recipe.id} - Name: {recipe.name}")
+    
+    id_input = int(input("Which Recipe would you like to edit? "))
+    if id_input < 1 or id_input > len(results):
+        print("Invalid input, please try again")
+        return
+
+
+
+def delete_recipe():
+    return   
+
+
+def main_menu():
+    while True:
+        print("\nMain Menu:")
+        print("---------------------------------")
+        print("1. Create a New Recipe")
+        print("2. Search Recipes by Ingredient")
+        print("3. Update an Existing Recipe")
+        print("4. Delete a recipe")
+        print("5. Exit the app")
+        print("---------------------------------")
+
+        menu_choice = input("Enter your choice: ")
+
+        if menu_choice == '1':
+            create_recipe()
+        elif menu_choice == '2':
+            search_by_ingredients()
+        elif menu_choice == '3':
+            edit_recipe()
+        elif menu_choice == '4':
+            delete_recipe()
+        elif menu_choice == '5':
+            print("Exiting program, see you later! ")
+            session.close()
+            engine.dispose()
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+    
+
+if __name__ == "__main__":
+    main_menu()
