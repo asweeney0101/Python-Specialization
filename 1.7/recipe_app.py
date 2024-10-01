@@ -63,14 +63,14 @@ def create_recipe():
     while True:
         name = input("Enter the recipe name (Max length 50 characters): ")
         if len(name) >= 50:
-            print("Name too long! ") 
+            print("\nName too long! ") 
         else:
             break   
 
     while True:        
         cooking_time = input("Enter the cooking time of the recipe (in minutes): ")
         if not cooking_time.isnumeric():
-            print("Cooking Time must be a number")
+            print("\nCooking Time must be a number")
         else:
             break
         
@@ -85,10 +85,10 @@ def create_recipe():
     try:
         session.add(recipe_entry)
         session.commit()
-        print("Recipe added successfully!")
+        print("\nRecipe added successfully!")
     except Exception as e:
         session.rollback()
-        print(f"An error occurred: {e}")
+        print(f"\nAn error occurred: {e}")
 
 
 
@@ -127,11 +127,11 @@ def search_by_ingredients():
     try:
         selected_numbers = [int(num) for num in user_input]
     except ValueError:
-        print("Invalid input. Please enter valid numbers.")
+        print("\n !!  Error: Invalid input. Please enter valid numbers.")
         return
 
     if any(num < 1 or num > len(all_ingredients) for num in selected_numbers):
-        print("One or more selected numbers are out of range.")
+        print("\nOne or more selected numbers are out of range.\n")
         return
 
     search_ingredients = [all_ingredients[num - 1] for num in selected_numbers] 
@@ -144,29 +144,60 @@ def search_by_ingredients():
     matching_recipes = session.query(Recipe).filter(or_(*conditions)).all()
 
     if matching_recipes:
-        print(f"Recipes matching ingredients: {', '.join(search_ingredients)}")
+        print(f"\nRecipes matching ingredients: {', '.join(search_ingredients)}")
         for recipe in matching_recipes:
             print(recipe)
     else:
-        print(f"No recipes found with ingredients: {', '.join(search_ingredients)}")
+        print(f"\nNo recipes found with ingredients: {', '.join(search_ingredients)}\n")
 
 
 
 def edit_recipe():
     if session.query(Recipe).count() == 0:
-        print("No recipes found.")
+        print("\nNo recipes found.\n")
         return
     
     results = session.query(Recipe.id, Recipe.name).all()
 
     print("\nAvailable Recipes:\n")
     for recipe in results:
-        print(f"ID: {recipe.id} - Name: {recipe.name}")
-    
+        print(f"ID: {recipe.id}. Name: {recipe.name}")
+    print("")
+
     id_input = int(input("Which Recipe would you like to edit? "))
     if id_input < 1 or id_input > len(results):
-        print("Invalid input, please try again")
+        print("\nInvalid input, please try again\n")
         return
+    
+    recipe_to_edit = session.query(Recipe).filter_by(id=int(id_input)).first()
+    if not recipe_to_edit:
+        print("Recipe not found.")
+        return
+    
+    print(f"\n1. Name: {recipe_to_edit.name}")
+    print(f"2. Ingredients: {recipe_to_edit.ingredients}")
+    print(f"3. Cooking Time: {recipe_to_edit.cooking_time}")
+    
+    detail_to_edit = input("\nEnter the number of the attribute you'd like to enter: ")
+    if detail_to_edit == "1":
+        new_name = input("Enter the new recipe name (max 50 characters): ")
+        if len(new_name) > 50:
+            print("Invalid recipe name!")
+            return
+        recipe_to_edit.name = new_name
+    
+    elif detail_to_edit == "2":
+        return
+    
+    elif detail_to_edit == "3":
+        return
+    
+    else:
+        print("\n!! Error: Invalid Selection, Please Try Again.  !!")
+    
+    recipe_to_edit.calculate_difficulty()
+    session.commit()
+    print("Recipe updated successfully!")
 
 
 
@@ -176,7 +207,8 @@ def delete_recipe():
 
 def main_menu():
     while True:
-        print("\nMain Menu:")
+        print("")
+        print("        ~~~ Main Menu ~~~         ")
         print("---------------------------------")
         print("1. Create a New Recipe")
         print("2. Search Recipes by Ingredient")
@@ -185,7 +217,7 @@ def main_menu():
         print("5. Exit the app")
         print("---------------------------------")
 
-        menu_choice = input("Enter your choice: ")
+        menu_choice = input("\nEnter your choice: ")
 
         if menu_choice == '1':
             create_recipe()
@@ -196,13 +228,12 @@ def main_menu():
         elif menu_choice == '4':
             delete_recipe()
         elif menu_choice == '5':
-            print("Exiting program, see you later! ")
+            print("\nExiting program, see you later!\n")
             session.close()
             engine.dispose()
             break
         else:
-            print("Invalid choice. Please try again.")
-
+            print("\n !! Error: Invalid choice. Please try again !! \n")
     
 
 if __name__ == "__main__":
