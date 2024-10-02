@@ -29,6 +29,7 @@ class Recipe(Base):
             f"Cooking Time: {self.cooking_time} minutes\n"
             f"Ingredients: {self.ingredients}\n"
             f"Difficulty: {self.difficulty}\n"
+            f"ID: {self.id}\n"
             f"{'-'*10}\n"
         )
 
@@ -85,7 +86,7 @@ def create_recipe():
     try:
         session.add(recipe_entry)
         session.commit()
-        print("\nRecipe added successfully!")
+        print(f"\nRecipe '{recipe_entry.name}' added successfully!")
     except Exception as e:
         session.rollback()
         print(f"\nAn error occurred: {e}")
@@ -131,7 +132,7 @@ def search_by_ingredients():
         return
 
     if any(num < 1 or num > len(all_ingredients) for num in selected_numbers):
-        print("\nOne or more selected numbers are out of range.\n")
+        print("\n !! Error: One or more selected numbers are out of range. \n")
         return
 
     search_ingredients = [all_ingredients[num - 1] for num in selected_numbers] 
@@ -162,47 +163,72 @@ def edit_recipe():
     print("\nAvailable Recipes:\n")
     for recipe in results:
         print(f"ID: {recipe.id}. Name: {recipe.name}")
-    print("")
 
-    id_input = int(input("Which Recipe would you like to edit? "))
-    if id_input < 1 or id_input > len(results):
+    id_input = input("\nWhich Recipe would you like to edit? ")
+    if not id_input.isnumeric():
         print("\nInvalid input, please try again\n")
         return
     
     recipe_to_edit = session.query(Recipe).filter_by(id=int(id_input)).first()
     if not recipe_to_edit:
-        print("Recipe not found.")
+        print("\nRecipe not found. ")
         return
     
     print(f"\n1. Name: {recipe_to_edit.name}")
     print(f"2. Ingredients: {recipe_to_edit.ingredients}")
     print(f"3. Cooking Time: {recipe_to_edit.cooking_time}")
     
-    detail_to_edit = input("\nEnter the number of the attribute you'd like to enter: ")
+    detail_to_edit = input("\nWhich detail would you like to change? (Enter the number): ")
     if detail_to_edit == "1":
-        new_name = input("Enter the new recipe name (max 50 characters): ")
+        new_name = input("\nEnter the new recipe name (max 50 characters): ")
         if len(new_name) > 50:
-            print("Invalid recipe name!")
+            print("\n!!  Error: Recipe name too long  !!")
             return
-        recipe_to_edit.name = new_name
+        recipe_to_edit.name = new_name    
     
     elif detail_to_edit == "2":
-        return
-    
+        new_ingredients = list(input("\nPlease list the required ingredients, separated by commas: ").split(', '))
+        new_ingredients_str = ', '.join([f'"{ingredient.strip()}"' for ingredient in new_ingredients])
+        recipe_to_edit.ingredients = new_ingredients_str
+
     elif detail_to_edit == "3":
-        return
+        new_time = int(input("\nEnter a new cooking time(in minutes): "))
+        recipe_to_edit.cooking_time = new_time
     
     else:
         print("\n!! Error: Invalid Selection, Please Try Again.  !!")
     
     recipe_to_edit.calculate_difficulty()
     session.commit()
-    print("Recipe updated successfully!")
+    print(f"\nRecipe '{recipe_to_edit.name}' updated successfully!")
 
 
 
 def delete_recipe():
-    return   
+    if session.query(Recipe).count() == 0:
+        print("\nNo recipes found.\n")
+        return
+        
+    print("\nAvailable Recipes:\n")
+    view_all_recipes()
+
+    selected_id = input("\nEnter the number of the recipe you'd like to delete: ")
+    if not selected_id.isnumeric():
+        print("\nError: Enter the number of the Recipe you'd like to delete.  ")
+        return
+
+    recipe_to_delete = session.query(Recipe).filter_by(id=int(selected_id)).first()
+    if not recipe_to_delete:
+        print("\nRecipe not found.")
+        return
+    
+    confirm = input(f"\nAre you sure you'd like to delete '{recipe_to_delete.name}'? ")
+    
+    if confirm.lower() == "yes" or confirm.lower() == "y":
+        session.delete(recipe_to_delete)
+        print(f"\nRecipe '{recipe_to_delete.name}' has been deleted. ")
+    else:
+        print("\nDelete Cancelled. ")
 
 
 def main_menu():
