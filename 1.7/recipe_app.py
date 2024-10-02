@@ -62,27 +62,39 @@ session = Session()
 
 def create_recipe():
     while True:
-        name = input("Enter the recipe name (Max length 50 characters): ")
-        if len(name) >= 50:
-            print("\nName too long! ") 
+        name = input("Enter the recipe name (Max length 50 characters): ").strip()
+        if not name:
+            print("\nName cannot be empty!")
+        elif len(name) > 50:
+            print("\nName too long!")
         else:
-            break   
+            break  
 
-    while True:        
+    while True:
         cooking_time = input("Enter the cooking time of the recipe (in minutes): ")
         if not cooking_time.isnumeric():
-            print("\nCooking Time must be a number")
+            print("\nCooking Time must be a number.")
+        elif int(cooking_time) <= 0:
+            print("\nCooking Time must be a positive number.")
         else:
             break
-        
-    ingredients = list(input("Please list the required ingredients, separated by commas: ").split(', '))
+
+    while True:
+        ingredients = input("Please list the required ingredients, separated by commas: ").split(', ')
+        ingredients = [ingredient.strip() for ingredient in ingredients if ingredient.strip()]
+
+        if not ingredients:
+            print("\nIngredients list cannot be empty. Please enter at least one ingredient.")
+        else:
+            break
+
     ingredients_str = ', '.join(ingredients)
 
     recipe_entry = Recipe(
         name=name, ingredients=ingredients_str, cooking_time=int(cooking_time)
     )
     recipe_entry.calculate_difficulty()
-     
+
     try:
         session.add(recipe_entry)
         session.commit()
@@ -90,7 +102,6 @@ def create_recipe():
     except Exception as e:
         session.rollback()
         print(f"\nAn error occurred: {e}")
-
 
 
 def view_all_recipes():
@@ -152,7 +163,6 @@ def search_by_ingredients():
         print(f"\nNo recipes found with ingredients: {', '.join(search_ingredients)}\n")
 
 
-
 def edit_recipe():
     if session.query(Recipe).count() == 0:
         print("\nNo recipes found.\n")
@@ -171,65 +181,87 @@ def edit_recipe():
     
     recipe_to_edit = session.query(Recipe).filter_by(id=int(id_input)).first()
     if not recipe_to_edit:
-        print("\nRecipe not found. ")
+        print("\nRecipe not found.")
         return
     
     print(f"\n1. Name: {recipe_to_edit.name}")
     print(f"2. Ingredients: {recipe_to_edit.ingredients}")
     print(f"3. Cooking Time: {recipe_to_edit.cooking_time}")
     
-    detail_to_edit = input("\nWhich detail would you like to change? (Enter the number): ")
-    if detail_to_edit == "1":
-        new_name = input("\nEnter the new recipe name (max 50 characters): ")
-        if len(new_name) > 50:
-            print("\n!!  Error: Recipe name too long  !!")
-            return
-        recipe_to_edit.name = new_name    
+    while True:
+        detail_to_edit = input("\nWhich detail would you like to change? (Enter the number): ")
+        if detail_to_edit == "1":
+            while True:
+                new_name = input("\nEnter the new recipe name (max 50 characters): ")
+                if len(new_name) > 50:
+                    print("\n!!  Error: Recipe name too long  !!")
+                else:
+                    recipe_to_edit.name = new_name
+                    break
     
-    elif detail_to_edit == "2":
-        new_ingredients = list(input("\nPlease list the required ingredients, separated by commas: ").split(', '))
-        new_ingredients_str = ', '.join([f'"{ingredient.strip()}"' for ingredient in new_ingredients])
-        recipe_to_edit.ingredients = new_ingredients_str
+        elif detail_to_edit == "2":
+            while True:
+                new_ingredients = input("Please list the required ingredients, separated by commas: ").split(', ')
+                new_ingredients = [ingredient.strip() for ingredient in new_ingredients if ingredient.strip()]
 
-    elif detail_to_edit == "3":
-        new_time = int(input("\nEnter a new cooking time(in minutes): "))
-        recipe_to_edit.cooking_time = new_time
-    
-    else:
-        print("\n!! Error: Invalid Selection, Please Try Again.  !!")
-    
-    recipe_to_edit.calculate_difficulty()
-    session.commit()
-    print(f"\nRecipe '{recipe_to_edit.name}' updated successfully!")
+                if not new_ingredients:
+                    print("\nIngredients list cannot be empty.")
+                else:
+                    new_ingredients_str = ', '.join(new_ingredients)
+                    recipe_to_edit.ingredients = new_ingredients_str
+                    break
 
+        elif detail_to_edit == "3":
+            while True:
+                new_time = input("\nEnter a new cooking time (in minutes): ")
+                if not new_time.isnumeric() or int(new_time) <= 0:
+                    print("\n!!  Error: Cooking time must be a positive number.  !!")
+                else:
+                    recipe_to_edit.cooking_time = int(new_time)
+                    break
+
+        else:
+            print("\n!! Error: Invalid Selection, Please Try Again.  !!")
+            continue  
+    
+        recipe_to_edit.calculate_difficulty()
+        session.commit()
+        print(f"\nRecipe '{recipe_to_edit.name}' updated successfully!")
+        break 
 
 
 def delete_recipe():
-    if session.query(Recipe).count() == 0:
-        print("\nNo recipes found.\n")
-        return
+    while True:
+        if session.query(Recipe).count() == 0:
+            print("\nNo recipes found.\n")
+            return
+            
+        print("\nAvailable Recipes:\n")
+        view_all_recipes()
+
+        while True:
+            selected_id = input("\nEnter the number of the recipe you'd like to delete: ")
+            if not selected_id.isnumeric():
+                print("\nError: Enter the number of the Recipe you'd like to delete.  ")
+                continue
+
+            recipe_to_delete = session.query(Recipe).filter_by(id=int(selected_id)).first()
+            if not recipe_to_delete:
+                print("\nRecipe not found.")
+                continue
+            
+            break
+
+        confirm = input(f"\nAre you sure you'd like to delete '{recipe_to_delete.name}'? ")
         
-    print("\nAvailable Recipes:\n")
-    view_all_recipes()
-
-    selected_id = input("\nEnter the number of the recipe you'd like to delete: ")
-    if not selected_id.isnumeric():
-        print("\nError: Enter the number of the Recipe you'd like to delete.  ")
-        return
-
-    recipe_to_delete = session.query(Recipe).filter_by(id=int(selected_id)).first()
-    if not recipe_to_delete:
-        print("\nRecipe not found.")
-        return
-    
-    confirm = input(f"\nAre you sure you'd like to delete '{recipe_to_delete.name}'? ")
-    
-    if confirm.lower() == "yes" or confirm.lower() == "y":
-        session.delete(recipe_to_delete)
-        print(f"\nRecipe '{recipe_to_delete.name}' has been deleted. ")
-    else:
-        print("\nDelete Cancelled. ")
-
+        if confirm.lower() == "yes" or confirm.lower() == "y":
+            session.delete(recipe_to_delete)
+            session.commit()
+            print(f"\nRecipe '{recipe_to_delete.name}' has been deleted. ")
+        else:
+            print("\nDelete Cancelled. ")
+        
+        break
 
 def main_menu():
     while True:
