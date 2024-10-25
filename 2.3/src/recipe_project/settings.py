@@ -38,10 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
         #bookstore-related apps
-    'books',
-    'sales',
-    'salespersons',
-    'customers',
+    'recipes',
 ]
 
 MIDDLEWARE = [
